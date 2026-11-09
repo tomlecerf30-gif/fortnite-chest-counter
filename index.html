@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#081a38">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Fortnite Chest Counter</title>
+<style>
+:root{--navy:#07162f;--blue:#0d3470;--blue2:#1456a5;--gold:#ffd34e;--gold2:#ffb91f;--white:#f6f8ff}
+*{box-sizing:border-box} body{margin:0;background:radial-gradient(circle at 50% 0,#174b8d 0,#081a38 48%,#050d1c 100%);color:var(--white);font-family:system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
+main{max-width:540px;margin:auto;padding:22px 16px 36px}
+header{text-align:center;padding:12px 4px 18px}
+.logo{display:inline-grid;place-items:center;width:68px;height:58px;border:2px solid var(--gold);border-radius:17px;background:linear-gradient(145deg,#1c5da6,#09234b);font-size:34px;box-shadow:0 0 25px #ffca4933}
+h1{font-size:23px;letter-spacing:.5px;margin:12px 0 3px} .sub{color:#b9c9e5;font-size:13px}
+.card{background:linear-gradient(150deg,#123d78ee,#091d3bee);border:1px solid #4775ad88;border-radius:20px;padding:18px;margin:12px 0;box-shadow:0 12px 30px #0005}
+.eyebrow{font-size:11px;letter-spacing:1.5px;color:#c8d8f2;text-transform:uppercase}
+.total{text-align:center;padding:18px 8px 14px}.number{font-size:64px;line-height:1.1;font-weight:850;color:var(--gold);text-shadow:0 3px 18px #ffbd2d55;font-variant-numeric:tabular-nums}
+.caption{color:#c5d5ee;font-size:13px;margin-top:4px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{background:#06183299;border:1px solid #42699c77;border-radius:14px;padding:13px}.stat strong{display:block;color:var(--gold);font-size:25px}.stat span{font-size:12px;color:#c3d2e8}
+button{border:0;border-radius:13px;padding:14px 16px;font-size:15px;font-weight:750;cursor:pointer}
+.primary{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#17233a;box-shadow:0 5px 18px #ffbd2d35}
+.secondary{background:#173e70;color:white;border:1px solid #5c82b4}
+.danger{background:#542c39;color:#ffe1e5;border:1px solid #a85a69}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.wide{width:100%;margin-top:10px}
+video{width:100%;border-radius:13px;background:#020812;aspect-ratio:16/9;object-fit:cover}
+.note{font-size:12px;line-height:1.5;color:#c4d3e9}.status{display:inline-block;border-radius:99px;padding:5px 9px;font-size:11px;background:#5a4820;color:#ffe08a}
+.history{max-height:190px;overflow:auto}.entry{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #ffffff18;font-size:13px}.empty{color:#9eb1ce;font-size:13px;padding:8px 0}
+footer{text-align:center;color:#8399b9;font-size:11px;padding:12px}
+</style>
+</head>
+<body><main>
+<header><div class="logo">🧰</div><h1>FORTNITE CHEST COUNTER</h1><div class="sub">Ton compteur de coffres • Bleu & or</div></header>
+<section class="card total">
+ <div class="eyebrow">Total de la saison</div><div class="number" id="total">0</div><div class="caption">coffres comptabilisés</div>
+ <div class="stats" style="margin-top:18px">
+  <div class="stat"><strong id="session">0</strong><span>Cette session</span></div>
+  <div class="stat"><strong id="games">0</strong><span>Sessions enregistrées</span></div>
+ </div>
+</section>
+<section class="card">
+ <div class="eyebrow">Compteur</div>
+ <div class="actions">
+  <button class="primary" id="add">＋ Coffre ouvert</button>
+  <button class="secondary" id="undo">↶ Annuler</button>
+ </div>
+ <button class="secondary wide" id="end">Terminer la session</button>
+ <p class="note">Pour cette première version, le comptage se fait avec le bouton. Cela permet de vérifier que le total et l'historique sont fiables avant d'ajouter une détection automatique.</p>
+</section>
+<section class="card">
+ <div class="eyebrow">Caméra du téléphone <span class="status" id="camStatus">Non démarrée</span></div>
+ <video id="video" playsinline muted></video>
+ <div class="actions">
+  <button class="secondary" id="startCam">Activer la caméra</button>
+  <button class="secondary" id="stopCam">Arrêter</button>
+ </div>
+ <p class="note">Place le téléphone face à l'écran de télévision pour tester le cadrage. La caméra sert ici à préparer la future reconnaissance visuelle ; elle ne compte pas encore automatiquement les coffres.</p>
+</section>
+<section class="card">
+ <div class="eyebrow">Historique des sessions</div>
+ <div class="history" id="history"><div class="empty">Aucune session terminée pour le moment.</div></div>
+ <button class="danger wide" id="reset">Réinitialiser le total de cette saison</button>
+</section>
+<footer>Version prototype 1 • Données conservées sur cet appareil</footer>
+</main>
+<script>
+const KEY='fn_chest_counter_v1';
+let data=JSON.parse(localStorage.getItem(KEY)||'{"total":0,"session":0,"games":0,"history":[]}');
+const $=id=>document.getElementById(id);
+function save(){localStorage.setItem(KEY,JSON.stringify(data));render()}
+function render(){
+ $('total').textContent=data.total.toLocaleString('fr-FR');
+ $('session').textContent=data.session.toLocaleString('fr-FR');
+ $('games').textContent=data.games.toLocaleString('fr-FR');
+ $('history').innerHTML=data.history.length?data.history.map(x=>`<div class="entry"><span>${x.date}</span><b>${x.count} coffre(s)</b></div>`).join(''):'<div class="empty">Aucune session terminée pour le moment.</div>';
+}
+$('add').onclick=()=>{data.total++;data.session++;save()};
+$('undo').onclick=()=>{if(data.session>0){data.session--;data.total=Math.max(0,data.total-1);save()}};
+$('end').onclick=()=>{if(data.session===0){alert('Aucun coffre compté pendant cette session.');return}data.history.unshift({date:new Date().toLocaleString('fr-FR'),count:data.session});data.games++;data.session=0;save()};
+$('reset').onclick=()=>{if(confirm('Effacer le total et l’historique de cette saison ?')){data={total:0,session:0,games:0,history:[]};save()}};
+let stream=null;
+$('startCam').onclick=async()=>{try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});$('video').srcObject=stream;await $('video').play();$('camStatus').textContent='Active';}catch(e){alert('Caméra inaccessible. Ouvre cette application depuis une adresse HTTPS et autorise la caméra dans le navigateur.');}};
+$('stopCam').onclick=()=>{if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;$('video').srcObject=null;$('camStatus').textContent='Arrêtée'};
+if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+render();
+</script></body></html>
